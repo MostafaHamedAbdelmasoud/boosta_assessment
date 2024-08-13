@@ -3,8 +3,6 @@ import { bookModel } from "../../../DB/models/Book.model.js";
 import { Op } from "sequelize";
 
 export const createBook = async (req, res, next) => {
-  console.log("info", "createBook");
-  console.log("body", req.body);
 
   const newBook = bookModel
     .sync({ force: false })
