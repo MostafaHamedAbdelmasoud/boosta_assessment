@@ -1,0 +1,11 @@
+version: "3"
+services:
+  express-openai:
+    container_name: expres-openai-container
+    build: .
+    volumes:
+      - ./src:/app/src:ro
+    ports:
+      - "3000:4000"
+    env_file:
+      - ./.env
