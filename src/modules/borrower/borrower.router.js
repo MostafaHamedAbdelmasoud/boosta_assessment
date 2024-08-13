@@ -7,12 +7,9 @@ import * as borrowerBookValidation from "./borrowerBook.validation.js";
 import * as borrowerController from "./controller/borrower.controller.js";
 import * as BorrowerBookController from "./controller/BorrowerBook.controller.js";
 import * as authController from "./controller/auth.controller.js";
-// import uploadFiles, {
-//   uploadFilesValidation,
-// } from "../../utils/cloudinaryMulter.js";
+
 import validation from "../../DB/middlewares/validation.js";
 import auth from "../../DB/middlewares/auth.js";
-// import userEndPointsRoles from "./user.endPoinetsRoles.js";
 const router = Router();
 router
   .post(
@@ -26,21 +23,40 @@ router
     asyncHandler(borrowerController.updateBorrower)
   )
   .get("/", asyncHandler(borrowerController.getBorrowers))
+  .get(
+    "/me",
+    validation(tokenSchema, true),
+    auth(),
+    asyncHandler(borrowerController.me)
+  )
   .delete(
-    "/:id",
-    validation(borrowerValidation.deleteBorrowerSchema),
+    "/",
+    validation(tokenSchema, true),
+    auth(),
     asyncHandler(borrowerController.deleteBorrower)
+  )  
+  .delete(
+    "/books/:id",
+    validation(tokenSchema, true),
+    auth(),
+    asyncHandler(BorrowerBookController.deleteReservedBook)
   )
   .post(
-    "/book",
+    "/books",
     validation(tokenSchema, true),
     auth(),
     validation(borrowerBookValidation.createBorrowerBookSchema),
     asyncHandler(BorrowerBookController.reserveBook)
   )
+  .get(
+    "/books",
+    validation(tokenSchema, true),
+    auth(),
+    asyncHandler(BorrowerBookController.getAllReservedBook)
+  )
   .post(
     "/login",
     validation(borrowerValidation.loginSchema),
     asyncHandler(authController.login)
-  )
+  );
 export default router;

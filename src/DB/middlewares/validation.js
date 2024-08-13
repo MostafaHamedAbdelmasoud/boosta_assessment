@@ -1,10 +1,4 @@
-// import { Types } from "mongoose";
 
-// export const validateId = (value, helper) => {
-//   return Types.ObjectId.isValid(value)
-//     ? true
-//     : helper.message("Invalid id format");
-// };
 const validation = (schema,containToken) => {
   return (req, res, next) => {
     let data = { ...req.body, ...req.params, ...req.query };
