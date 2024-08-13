@@ -4,6 +4,7 @@ import borrowerRouter from "./modules/borrower/borrower.router.js";
 import bookRouter from "./modules/book/book.router.js";
 import reservationRouter from "./modules/reservation/reservation.router.js";
 import setupAssociations from "./associations.js";
+import redisClient from "./DB/redis.js";
 
 async function Bootstrap(app, express) {
   sequelize
@@ -14,8 +15,8 @@ async function Bootstrap(app, express) {
     .catch((err) => {
       console.error("Unable to connect to the database:", err);
     });
-
-  await import("./migrate.js");
+    await import("./migrate.js");
+    redisClient.connect();
 
   setupAssociations();
 

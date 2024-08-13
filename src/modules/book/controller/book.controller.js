@@ -1,24 +1,20 @@
 import { bookModel } from "../../../DB/models/Book.model.js";
-
+import redisClient  from "../../../DB/redis.js";
+import { setNewDataInRedis } from "../../../utils/redisHandler.js";
 import { Op } from "sequelize";
 
 export const createBook = async (req, res, next) => {
+  const newBook = bookModel.create({
+    title: req.body.title,
+    author: req.body.author,
+    ISBN: req.body.ISBN,
+    available_quantity: req.body.available_quantity,
+    shelf_location: req.body.shelf_location,
+  });
 
-  const newBook = bookModel
-    .sync({ force: false })
-    .then(() => {
-      return bookModel.create({
-        title: req.body.title,
-        author: req.body.author,
-        ISBN: req.body.ISBN,
-        available_quantity: req.body.available_quantity,
-        shelf_location: req.body.shelf_location,
-      });
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-
+  await setNewDataInRedis("books", newBook);
+  console.log("redis books", redisClient.get("books"));
+  
   return res.status(200).json({
     message: "book created successfully",
     id: newBook?.id,
@@ -55,41 +51,46 @@ export const updateBook = async (req, res, next) => {
 };
 
 export const getBooks = async (req, res, next) => {
-  req.query.fields = ["id","title", "author", "ISBN", "available_quantity", "shelf_location"];
-  
+  req.query.fields = [
+    "id",
+    "title",
+    "author",
+    "ISBN",
+    "available_quantity",
+    "shelf_location",
+  ];
+
   const andConditions = [];
 
   if (req.query.author) {
     andConditions.push({
       author: {
-        [Op.like]: `%${req.query.author}%`
-      }
+        [Op.like]: `%${req.query.author}%`,
+      },
     });
   }
-  
+
   if (req.query.ISBN) {
     andConditions.push({
       ISBN: {
-        [Op.like]: `%${req.query.ISBN}%`
-      }
+        [Op.like]: `%${req.query.ISBN}%`,
+      },
     });
   }
-  
+
   if (req.query.title) {
     andConditions.push({
       title: {
-        [Op.like]: `%${req.query.title}%`
-      }
+        [Op.like]: `%${req.query.title}%`,
+      },
     });
   }
-  
+
   const books = await bookModel.findAll({
     attributes: req.query.fields,
-    where:{
-      [Op.and]: andConditions
-
-
-    }
+    where: {
+      [Op.and]: andConditions,
+    },
   });
 
   return res.status(200).json({

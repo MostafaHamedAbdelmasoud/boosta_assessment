@@ -1,4 +1,4 @@
-import sequelize from "../../../DB/connection.js";
+import {sequelize} from "../../../DB/connection.js";
 import { bookModel } from "../../../DB/models/Book.model.js";
 import { borrowerModel } from "../../../DB/models/Borrower.model.js";
 import { borrowerBookModel } from "../../../DB/models/BorrowerBook.model.js";
@@ -15,18 +15,11 @@ export const reserveBook = async (req, res, next) => {
     });
     if (!bookExist) {
       await t.rollback();
-      return res.status(400).json({
-        message: "book id is not found",
-        error: "book does not exist",
-      });
+      return next(new Error("book not found", { cause: 404 }));
     }
     if (bookExist.available_quantity < 1) {
       await t.rollback();
-      return next(
-        new Error("no available stock for book: " + bookExist.title, {
-          cause: 400,
-        })
-      );
+      return next(new Error("book not available", { cause: 409 }));
     }
 
     const newBorrower = await borrowerBookModel.create(req.body, {
@@ -92,7 +85,7 @@ export const deleteReservedBook = async (req, res, next) => {
 
     if (!borrower) {
       await transaction.rollback();
-      return res.status(404).json({ message: "Borrower not found" });
+      return next(new Error("borrower not found", { cause: 404 }));
     }
 
     const { id: bookId } = req.params; // Assuming the book ID is passed as a URL parameter
@@ -104,15 +97,15 @@ export const deleteReservedBook = async (req, res, next) => {
 
     if (!bookExist) {
       await transaction.rollback();
-      return res.status(404).json({ message: "Book not found" });
+      return next(new Error("book not found", { cause: 404 }));
     }
 
-    await bookExist.destroy();
     await bookModel.increment("available_quantity", {
       by: 1,
       where: { id: bookExist.book_id },
       transaction,
     });
+    await bookExist.destroy();
     await transaction.commit();
 
     return res

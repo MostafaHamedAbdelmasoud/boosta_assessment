@@ -5,7 +5,7 @@ import tokenSchema from "../../utils/tokenSchema.js";
 import * as borrowerValidation from "./borrower.validation.js";
 import * as borrowerBookValidation from "./borrowerBook.validation.js";
 import * as borrowerController from "./controller/borrower.controller.js";
-import * as BorrowerBookController from "./controller/BorrowerBook.controller.js";
+import * as borrowerBookController from "./controller/borrowerBook.controller.js";
 import * as authController from "./controller/auth.controller.js";
 
 import validation from "../../DB/middlewares/validation.js";
@@ -39,20 +39,20 @@ router
     "/books/:id",
     validation(tokenSchema, true),
     auth(),
-    asyncHandler(BorrowerBookController.deleteReservedBook)
+    asyncHandler(borrowerBookController.deleteReservedBook)
   )
   .post(
     "/books",
     validation(tokenSchema, true),
     auth(),
     validation(borrowerBookValidation.createBorrowerBookSchema),
-    asyncHandler(BorrowerBookController.reserveBook)
+    asyncHandler(borrowerBookController.reserveBook)
   )
   .get(
     "/books",
     validation(tokenSchema, true),
     auth(),
-    asyncHandler(BorrowerBookController.getAllReservedBook)
+    asyncHandler(borrowerBookController.getAllReservedBook)
   )
   .post(
     "/login",

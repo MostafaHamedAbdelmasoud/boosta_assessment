@@ -9,12 +9,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.post("/test", (req, res) => {
-  console.log("body", req.body.firstName);
-  return res.status(200).json({
-    message: "user created successfully",
-  });
-});
 Bootstrap(app, express);
 
 

@@ -1,5 +1,5 @@
 import { Sequelize } from "sequelize";
-import sequelize from "../../../DB/connection.js";
+import {sequelize} from "../../../DB/connection.js";
 import { borrowerModel } from "../../../DB/models/Borrower.model.js";
 import { generateToken } from "../../../utils/generateAndVerifyToken.js";
 import { hashPassword } from "../../../utils/hashAndCompare.js";

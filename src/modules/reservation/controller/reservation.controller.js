@@ -1,4 +1,4 @@
-import sequelize from "../../../DB/connection.js";
+import {sequelize} from "../../../DB/connection.js";
 import { borrowerBookModel } from "../../../DB/models/BorrowerBook.model.js";
 import { Op, Sequelize } from "sequelize";
 

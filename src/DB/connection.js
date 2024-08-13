@@ -5,5 +5,3 @@ export const sequelize = new Sequelize("bosta", "root", "Hamed&1234", {
   port: "3306",
 
 });
-
-export default sequelize;
