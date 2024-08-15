@@ -1,9 +1,9 @@
-// import redis from "redis";
-// export const redisClient = redis.createClient(6379);
 
 import { createClient } from 'redis';
-const redis_port =6379;
-const redis_host = 'redis';
+
+const redis_port =process.env.REDIS_PORT ;
+const redis_host = process.env.REDIS_HOST;
+
 const redisClient = createClient(
   {
     url: `redis://${redis_host}:${redis_port}`
@@ -11,11 +11,9 @@ const redisClient = createClient(
 );
 
 redisClient.on('error', (err) => console.error('Redis Client Error', err));
+const connectRedis = async () => await redisClient.on("connect",()=>console.log("Redis Connected"));
+connectRedis();
 
-await redisClient.on("connect",()=>console.log("Redis Connected"));
-
-// redisClient.connect();
-
-export default redisClient;
+export {redisClient}
 
 

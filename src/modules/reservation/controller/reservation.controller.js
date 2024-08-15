@@ -1,30 +1,35 @@
-import {sequelize} from "../../../DB/connection.js";
-import { borrowerBookModel } from "../../../DB/models/BorrowerBook.model.js";
-import { Op, Sequelize } from "sequelize";
+import { reservationModel } from "../../../DB/models/Reservation.model.js";
+import { httpStatus } from "../../../utils/httpStatus.js";
+import { getAllRecordsInRedis } from "../../../utils/redisHandler.js";
 
 export const getReservations = async (req, res, next) => {
-  const transaction = await sequelize.transaction({
-    isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.READ_COMMITTED,
-  });
-
   try {
-    req.query.fields = ["id", "book_id", "borrower_id", "due_date"];
+    const reservations = await getAllRecordsInRedis(
+      "reservations",
+      reservationModel
+    );
+    const findReservationsBasedOnDueDate = (params) => {
+      const { from_due_date, to_due_date } = params;
+      return reservations.filter((reservation) => {
+        if (!reservation) {
+          return false;
+        }
+        const fromDueDate = reservation.due_date >= new Date(from_due_date);
+        const toDueDate = reservation.due_date >= new Date(to_due_date);
+        return fromDueDate && toDueDate;
+      });
+    };
+    
 
-    const reservations = await borrowerBookModel.findAll({
-      attributes: req.query.fields,
-      where: req.query.due_date
-        ? { due_date: { [Op.lte]: req.query.due_date } }
-        : {},
-    });
-    await transaction.commit();
-
-    return res.status(200).json({
-      message: "done",
+    return res.status(httpStatus.OK.code).json({
+      message: httpStatus.OK.message,
       data: reservations,
     });
   } catch (err) {
-    await transaction.rollback();
     console.error(err);
+
+    return res
+      .status(httpStatus.INTERNAL_SERVER_ERROR.code)
+      .json({ message: httpStatus.INTERNAL_SERVER_ERROR.message });
   }
-  return next();
 };

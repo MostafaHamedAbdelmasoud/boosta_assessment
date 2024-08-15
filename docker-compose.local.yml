@@ -3,9 +3,11 @@ services:
   express-bosta:
     build: 
       context: .
-      target: development
+      target: local
     volumes:
       - ./src:/app/src:ro
+    env_file:
+      - ./.env.local
     environment:
       - NODE_ENV=development
     command: npm run dev

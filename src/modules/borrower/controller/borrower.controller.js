@@ -3,8 +3,10 @@ import {sequelize} from "../../../DB/connection.js";
 import { borrowerModel } from "../../../DB/models/Borrower.model.js";
 import { generateToken } from "../../../utils/generateAndVerifyToken.js";
 import { hashPassword } from "../../../utils/hashAndCompare.js";
-import { borrowerBookModel } from "../../../DB/models/BorrowerBook.model.js";
+import { reservationModel } from "../../../DB/models/Reservation.model.js";
 import { bookModel } from "../../../DB/models/Book.model.js";
+import { httpStatus } from "../../../utils/httpStatus.js";
+import { getAllRecordsInRedis, setNewDataInRedis, updateOneRecordInRedis } from "../../../utils/redisHandler.js";
 
 export const createBorrower = async (req, res, next) => {
   try {
@@ -12,7 +14,9 @@ export const createBorrower = async (req, res, next) => {
       where: { email: req.body.email },
     });
     if (userExist) {
-      return next(new Error("email already exist", { cause: 409 }));
+      return res.status(httpStatus.ALREADY_EXISTS.code).json({
+        message: httpStatus.ALREADY_EXISTS.message,
+      });    
     }
 
     req.body.password = hashPassword({
@@ -28,16 +32,18 @@ export const createBorrower = async (req, res, next) => {
       signature: process.env.JWT_TOKEN_SIGNATURE,
       expireIn: 60 * 60 * 24 * 15,
     });
+    await setNewDataInRedis("borrowers", newBorrower.dataValues);
 
-    return res.status(200).json({
-      message: "borrower created successfully",
+    return res.status(httpStatus.CREATED.code).json({
+      message: httpStatus.CREATED.message,
       id: newBorrower?.id,
       token,
     });
   } catch (error) {
+    console.error("Error creating borrower: ", error);
     return res
-      .status(500)
-      .json({ message: "Internal Error", error: error.errors });
+      .status(httpStatus.INTERNAL_SERVER_ERROR.code)
+      .json({ message: httpStatus.INTERNAL_SERVER_ERROR.message, error: error.errors });
   }
 };
 
@@ -48,7 +54,9 @@ export const updateBorrower = async (req, res, next) => {
     });
 
     if (!borrowerExist) {
-      return next(new Error("borrower not found", { cause: 404 }));
+      return res.status(httpStatus.NOT_FOUND.code).json({
+        message: httpStatus.NOT_FOUND.message,
+      });    
     }
 
     await borrowerModel.update(req.body, {
@@ -58,34 +66,30 @@ export const updateBorrower = async (req, res, next) => {
     const updatedBorrower = await borrowerModel.findOne({
       where: { id: req.params.id },
     });
+    await updateOneRecordInRedis('borrowers', req.params.id, updatedBorrower.dataValues);
 
-    return res.status(200).json({ message: "done", data: updatedBorrower });
+    return res.status(httpStatus.OK.code).json({ message: httpStatus.OK.message, data: updatedBorrower });
   } catch (error) {
     return res
-      .status(409)
-      .json({ message: "Unique constraint error", error: error.errors });
+      .status(httpStatus.BAD_REQUEST.code)
+      .json({ message: httpStatus.BAD_REQUEST.message, error: error.errors });
   }
 };
 
 export const getBorrowers = async (req, res, next) => {
   req.query.fields = ["id", "name", "email"];
-  const limit = parseInt(req.params.limit, 10) || 10;
-  const page = parseInt(req.params.page, 10) || 1;
-  const offset = (page - 1) * limit;
+  
+  const allCachedBorrowers = await getAllRecordsInRedis("borrowers",borrowerModel);
 
-  const borrowers = await borrowerModel.findAll({
-    attributes: req.query.fields,
-  });
-
-  return res.status(200).json({
-    message: "done",
-    data: borrowers,
+  return res.status(httpStatus.OK.code).json({
+    message: httpStatus.OK.message,
+    data: allCachedBorrowers,
   });
 };
 export const me = async (req, res, next) => {
 
-  return res.status(200).json({
-    message: "done",
+  return res.status(httpStatus.OK.code).json({
+    message: httpStatus.OK.message,
     data: req.user,
   });
 };
@@ -100,7 +104,7 @@ export const deleteBorrower = async (req, res, next) => {
       where: { id: borrowerId },
       include: [
         {
-          model: borrowerBookModel,
+          model: reservationModel,
           as: "borrowerBooks",
           include: [
             {
@@ -113,7 +117,9 @@ export const deleteBorrower = async (req, res, next) => {
     });
 
     if (!borrowerExist) {
-      return next(new Error("borrower not found", { cause: 404 }));
+      return res.status(httpStatus.NOT_FOUND.code).json({
+        message: httpStatus.NOT_FOUND.message,
+      });    
     }
     // increase the available quantity of the borrowerBooks that was borrowed
     await borrowerExist.borrowerBooks.forEach(async (borrowerBook) => {
@@ -121,6 +127,8 @@ export const deleteBorrower = async (req, res, next) => {
         by: 1,
         where: { id: borrowerBook.book_id },
       }, { transaction });
+      await updateOneRecordInRedis("books", borrowerBook.book.book_id, borrowerBook.book.dataValues);
+
     });
 
     const result = await borrowerModel.destroy({
@@ -132,11 +140,15 @@ export const deleteBorrower = async (req, res, next) => {
     
     if (result === 0) {
       await transaction.rollback();
-      return next(new Error("failed to delete borrower", { cause: 400 }));
+      return res.status(httpStatus.INTERNAL_SERVER_ERROR.code).json({
+        message: httpStatus.INTERNAL_SERVER_ERROR.message,
+      });    
     } else {
+      await deleteOneRecordFromRedis("borrowers", req.params.id);
+
       await transaction.commit();
-      return res.status(200).json({
-        message: "done",
+      return res.status(httpStatus.CREATED.code).json({
+        message: httpStatus.CREATED.message,
         data: "Borrower deleted Successfully",
       });
     }

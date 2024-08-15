@@ -1,3 +1,4 @@
+import { httpStatus } from "../../utils/httpStatus.js";
 
 const validation = (schema,containToken) => {
   return (req, res, next) => {
@@ -9,8 +10,10 @@ const validation = (schema,containToken) => {
 
     const validationResult = schema.validate(data, { abortEarly: false });
     if (validationResult?.error) {
-      req.validationError = validationResult?.error;
-      return next(new Error("catch validation error", { cause: 400 }));
+      req.validatilogonError = validationResult?.error;
+      return  res.status(httpStatus.BAD_REQUEST.code).json({
+        message: 'Catch validation error',
+      });    
     }
     next();
   };

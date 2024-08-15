@@ -1,6 +1,7 @@
 import { borrowerModel } from "../../../DB/models/Borrower.model.js";
 import { generateToken } from "../../../utils/generateAndVerifyToken.js";
 import { comparePassword } from "../../../utils/hashAndCompare.js";
+import { httpStatus } from "../../../utils/httpStatus.js";
 
 export const login = async (req, res, next) => {
   try {
@@ -10,7 +11,9 @@ export const login = async (req, res, next) => {
     const userExist = await borrowerModel.findOne({where:{ email: email }});
 
     if (!userExist) {
-      return next(new Error("invalid email or password", { cause: 400 }));
+      return res.status(httpStatus.NOT_FOUND.code).json({
+        message: httpStatus.NOT_FOUND.message,
+      });    
     }
 
     const passwordMatched = comparePassword({
@@ -18,7 +21,9 @@ export const login = async (req, res, next) => {
       hashedValue: userExist.password,
     });
     if (!passwordMatched) {
-      return next(new Error("invalid email or password", { cause: 400 }));
+      return res.status(httpStatus.NOT_FOUND.code).json({
+        message: httpStatus.NOT_FOUND.message,
+      });    
     }
 
     const token = generateToken({
@@ -29,21 +34,15 @@ export const login = async (req, res, next) => {
       signature: process.env.JWT_TOKEN_SIGNATURE,
       expireIn: 60 * 60 * 24 * 15,
     });
-    const refToken = generateToken({
-      payload: {
-        id: userExist.id,
-        email: userExist.email,
-      },
-      signature: process.env.JWT_TOKEN_SIGNATURE,
-      expireIn: 60 * 60 * 24 * 30,
-    });
-    return res.status(200).json({
-      message: "done",
+    return res.status(httpStatus.OK.code).json({
+      message: httpStatus.OK.message,
       token,
-      refToken,
     });
   } catch (err) {
     console.error(err);
+    return res
+      .status(httpStatus.INTERNAL_SERVER_ERROR.code)
+      .json({ message: httpStatus.INTERNAL_SERVER_ERROR.message, error: err });
   }
   return next();
 };

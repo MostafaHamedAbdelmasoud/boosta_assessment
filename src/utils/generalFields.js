@@ -1,9 +1,6 @@
 import joi from "joi";
-// import { validateId } from "../DB/middlewares/validation.js";
 
 const generalFields = {
-  // id: joi.string().custom(validateId).required(),
-  // _id: joi.string().custom(validateId),
   name: joi.string().trim(),
   text: joi.string(),
   integer: joi.number().integer(),

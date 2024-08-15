@@ -1,6 +1,5 @@
 import { Model, DataTypes } from 'sequelize';
 import {sequelize} from "../connection.js";
-import { borrowerBookModel } from './BorrowerBook.model.js';
 
 
 

@@ -1,11 +1,10 @@
 import { Model, DataTypes } from 'sequelize';
-import { borrowerModel } from './Borrower.model.js';
 import {sequelize} from '../connection.js'
 
 
-class BorrowerBookModel extends Model {}
+class reservationModel extends Model {}
 
-BorrowerBookModel.init({
+reservationModel.init({
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -24,11 +23,11 @@ BorrowerBookModel.init({
   },
 }, {
   sequelize,
-  modelName: 'borrower_book',
+  modelName: 'reservation',
   underscored: true 
 
 });
 
-export const borrowerBookModel = BorrowerBookModel;
+export { reservationModel};
 
 
