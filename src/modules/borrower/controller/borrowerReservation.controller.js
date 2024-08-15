@@ -98,9 +98,10 @@ export const deleteReservedBook = async (req, res, next) => {
 
       
     if (!borrower) {
+      
       await transaction.rollback();
       returnres.status(httpStatus.NOT_FOUND.code).json({
-        message: httpStatus.NOT_FOUND.message,
+        message: 'borrower '+httpStatus.NOT_FOUND.message
       });    
     }
 

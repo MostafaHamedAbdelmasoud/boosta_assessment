@@ -7,7 +7,7 @@ const router = Router();
 router
   .get(
     "/",
-    validation(reservationValidation.getAllReservationsSchema), 
+    reservationValidation.getAllReservationsValidation, 
     asyncHandler(reservationController.getReservations)
   )
 export default router;

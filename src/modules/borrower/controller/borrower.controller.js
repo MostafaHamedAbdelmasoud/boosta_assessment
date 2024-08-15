@@ -65,11 +65,13 @@ export const updateBorrower = async (req, res, next) => {
 
     const updatedBorrower = await borrowerModel.findOne({
       where: { id: req.params.id },
+      attributes: ["id", "name", "email",'registered_date','created_at','updated_at'],
     });
     await updateOneRecordInRedis('borrowers', req.params.id, updatedBorrower.dataValues);
 
     return res.status(httpStatus.OK.code).json({ message: httpStatus.OK.message, data: updatedBorrower });
   } catch (error) {
+    console.error("Error updating borrower: ", error);
     return res
       .status(httpStatus.BAD_REQUEST.code)
       .json({ message: httpStatus.BAD_REQUEST.message, error: error.errors });

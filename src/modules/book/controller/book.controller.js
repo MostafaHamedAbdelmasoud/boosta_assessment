@@ -1,3 +1,4 @@
+import { validationResult } from "express-validator";
 import { bookModel } from "../../../DB/models/Book.model.js";
 import { redisClient } from "../../../DB/redis.js";
 import { httpStatus } from "../../../utils/httpStatus.js";
@@ -9,6 +10,14 @@ import {
 } from "../../../utils/redisHandler.js";
 
 export const createBook = async (req, res, next) => {
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(httpStatus.BAD_REQUEST.code).json({
+      message: httpStatus.BAD_REQUEST.message,
+      errors: errors.array()
+    });
+  }
   try {
     const newBook = await bookModel.create({
       title: req.body.title,
